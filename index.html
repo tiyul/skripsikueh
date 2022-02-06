@@ -86,7 +86,7 @@ function generateChartData() {
 
     var newDate = new Date(firstDate);
     newDate.setDate(newDate.getDate() + i);
-    value += (Math.random() < 0.5 ? 1 : -1) * Math.random() * 10;
+    value += 0;
 
     chartData.push({
       date: newDate.getTime(),
