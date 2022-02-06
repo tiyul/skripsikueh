@@ -180,7 +180,7 @@ function addData() {
   prediksi.on("value", function(snapshot) {
   var lastDataItem = series.dataItems[series.dataItems.length - 1];
   var lastValue = lastDataItem.get("valueY");
-  var newValue = value + (snapshot.val());
+  var newValue =(snapshot.val());
   var lastDate = new Date(lastDataItem.get("valueX"));
   var time = am5.time.add(new Date(lastDate), "day", 1).getTime();
   series.data.removeIndex(0);
