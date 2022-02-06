@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body style="font-family:Verdana;color:#aaaaaa;">
+
+<div style="background-color:#57adf3;padding:15px;text-align:center;">
+  <h1>Skripsi</h1>
+</div>
+
+<div style="overflow:auto">
+  <div class="menu">
+  
+  <div id="gauge"></div>
+  <p>data : </p>
+  </div>
+
+  <div class="main">
+    <div id="chart"></div>
+    <div id="pred"></div>
+    
+  </div>
+
+  <div class="right">
+    <div id="jam"></div>
+    
+  </div>
+</div>
+
+<div style="background-color:#e5e5e5;text-align:center;padding:10px;margin-top:7px;">© copyright tya</div>
+<!-- Resources -->
+<script src="fr.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/radar.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+
+
+
+<!-- Chart code -->
+<script>
+var config = {
+    apiKey: "AIzaSyBRNggk97pMFY8tZ-9f6L3z2clq_gTmtl8",
+    authDomain: "yolo213.firebaseapp.com",
+    databaseURL: "https://yolo213-default-rtdb.firebaseio.com",
+    projectId: "yolo213",
+    storageBucket: "yolo213.appspot.com",
+    messagingSenderId: "458382071992",
+    appId: "1:458382071992:web:d4af4ec64eaef1850dbc4d",
+    measurementId: "G-HQ10HEBL7Y"
+  };
+
+firebase.initializeApp(config);
+var db = firebase.database();
+var ref = db.ref("/test/float");
+var prediksi = db.ref("/test/prediksi");
+
+
+am5.ready(function() {
+
+// Create root element
+// https://www.amcharts.com/docs/v5/getting-started/#Root_element
+var root = am5.Root.new("pred");
+
+
+// Set themes
+// https://www.amcharts.com/docs/v5/concepts/themes/
+root.setThemes([
+  am5themes_Animated.new(root)
+]);
+
+
+// Generate random data
+var value = 100;
+
+function generateChartData() {
+  var chartData = [];
+  var firstDate = new Date();
+  firstDate.setDate(firstDate.getDate() - 1000);
+  firstDate.setHours(0, 0, 0, 0);
+
+  for (var i = 0; i < 16; i++) {
+
+    var newDate = new Date(firstDate);
+    newDate.setDate(newDate.getDate() + i);
+    value += (Math.random() < 0.5 ? 1 : -1) * Math.random() * 10;
+
+    chartData.push({
+      date: newDate.getTime(),
+      value: value
+    });
+  }
+  return chartData;
+}
+
+var data = generateChartData();
+
+
+// Create chart
+// https://www.amcharts.com/docs/v5/charts/xy-chart/
+var chart = root.container.children.push(am5xy.XYChart.new(root, {
+  focusable: true,
+  panX: true,
+  panY: true,
+  wheelX: "panX",
+  wheelY: "zoomX"
+}));
+
+var easing = am5.ease.linear;
+
+
+// Create axes
+// https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+var xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, {
+  maxDeviation: 0.5,
+  extraMin:-0.1,
+  extraMax:0.1,
+  groupData: false,
+  baseInterval: {
+    timeUnit: "day",
+    count: 1
+  },
+  renderer: am5xy.AxisRendererX.new(root, {
+    minGridDistance: 50
+  }),
+  tooltip: am5.Tooltip.new(root, {})
+}));
+
+var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+  renderer: am5xy.AxisRendererY.new(root, {})
+}));
+
+
+// Add series
+// https://www.amcharts.com/docs/v5/charts/xy-chart/series/
+var series = chart.series.push(am5xy.LineSeries.new(root, {
+  minBulletDistance: 10,
+  name: "Series 1",
+  xAxis: xAxis,
+  yAxis: yAxis,
+  valueYField: "value",
+  valueXField: "date",
+  tooltip: am5.Tooltip.new(root, {
+    pointerOrientation: "horizontal",
+    labelText: "{valueY}"
+  })
+}));
+series.data.setAll(data);
+
+series.bullets.push(function () {
+  return am5.Bullet.new(root, {
+    locationX:undefined,
+    sprite: am5.Circle.new(root, {
+      radius: 4,
+      fill: series.get("fill")
+    })
+  })
+});
+
+
+// Add cursor
+// https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
+var cursor = chart.set("cursor", am5xy.XYCursor.new(root, {
+  xAxis: xAxis
+}));
+cursor.lineY.set("visible", false);
+
+
+// Update data every second
+setInterval(function () {
+  addData();
+}, 1000)
+
+
+function addData() {
+
+  prediksi.on("value", function(snapshot) {
+  var lastDataItem = series.dataItems[series.dataItems.length - 1];
+  var lastValue = lastDataItem.get("valueY");
+  var newValue = value + (snapshot.val());
+  var lastDate = new Date(lastDataItem.get("valueX"));
+  var time = am5.time.add(new Date(lastDate), "day", 1).getTime();
+  series.data.removeIndex(0);
+  series.data.push({
+    date: time,
+    value: newValue
+  })
+
+  var newDataItem = series.dataItems[series.dataItems.length - 1];
+  newDataItem.animate({
+    key: "valueYWorking",
+    to: newValue,
+    from: lastValue,
+    duration: 600,
+    easing: easing
+  });
+
+  var animation = newDataItem.animate({
+    key: "locationX",
+    to: 0.5,
+    from: -0.5,
+    duration: 600
+  });
+  if (animation) {
+    var tooltip = xAxis.get("tooltip");
+    if (tooltip && !tooltip.isHidden()) {
+      animation.events.on("stopped", function () {
+        xAxis.updateTooltip();
+      })
+    }
+  }
+
+
+  });
+
+ 
+}
+
+
+// Make stuff animate on load
+// https://www.amcharts.com/docs/v5/concepts/animations/
+chart.appear(1000, 100);
+
+}); // end am5.ready()
+
+am5.ready(function() {
+
+// Create root element
+// https://www.amcharts.com/docs/v5/getting-started/#Root_element
+var root = am5.Root.new("chart");
+
+
+// Set themes
+// https://www.amcharts.com/docs/v5/concepts/themes/
+root.setThemes([
+  am5themes_Animated.new(root)
+]);
+
+
+// Generate random data
+var value = 0;
+
+function generateChartData() {
+  var chartData = [];
+  var firstDate = new Date();
+  firstDate.setDate(firstDate.getDate() - 200);
+  firstDate.setHours(0, 0, 0, 0);
+
+  for (var i = 0; i < 150; i++) {
+    var newDate = new Date(firstDate);
+    newDate.setSeconds(newDate.getSeconds() + i);
+    value += 0;
+
+    chartData.push({
+      date: newDate.getTime(),
+      value: value
+    });
+  }
+  return chartData;
+}
+
+var data = generateChartData();
+
+
+// Create chart
+// https://www.amcharts.com/docs/v5/charts/xy-chart/
+var chart = root.container.children.push(am5xy.XYChart.new(root, {
+  focusable: true,
+  panX: true,
+  panY: true,
+  wheelX: "panX",
+  wheelY: "zoomX"
+}));
+
+var easing = am5.ease.linear;
+
+
+// Create axes
+// https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
+var xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, {
+  maxDeviation: 0.5,
+  groupData: false,
+  extraMax:0.3, // this adds some space in front
+  extraMin:-0.1,  // this removes some space form th beginning so that the line would not be cut off
+  baseInterval: {
+    timeUnit: "second",
+    count: 1
+  },
+  renderer: am5xy.AxisRendererX.new(root, {
+    minGridDistance: 500
+  }),
+  tooltip: am5.Tooltip.new(root, {})
+}));
+
+var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
+  renderer: am5xy.AxisRendererY.new(root, {})
+}));
+
+
+var series = chart.series.push(am5xy.LineSeries.new(root, {
+  name: "Series 1",
+  xAxis: xAxis,
+  yAxis: yAxis,
+  valueYField: "value",
+  valueXField: "date",
+  tooltip: am5.Tooltip.new(root, {
+    pointerOrientation: "horizontal",
+    labelText: "{valueY}"
+  })
+}));
+
+// tell that the last data item must create bullet
+data[data.length - 1].bullet = true;
+series.data.setAll(data);
+series.bullets.push(function(root, series, dataItem) {  
+ 
+  if (dataItem.dataContext.bullet) {    
+    var container = am5.Container.new(root, {});
+    var circle0 = container.children.push(am5.Circle.new(root, {
+      radius: 5,
+      fill: am5.color(0xff0000)
+    }));
+    var circle1 = container.children.push(am5.Circle.new(root, {
+      radius: 5,
+      fill: am5.color(0xff0000)
+    }));
+
+    circle1.animate({
+      key: "radius",
+      to: 20,
+      duration: 1000,
+      easing: am5.ease.out(am5.ease.cubic),
+      loops: Infinity
+    });
+    circle1.animate({
+      key: "opacity",
+      to: 0,
+      from: 1,
+      duration: 1000,
+      easing: am5.ease.out(am5.ease.cubic),
+      loops: Infinity
+    });
+
+    return am5.Bullet.new(root, {
+      locationX:undefined,
+      sprite: container
+    })
+  }
+})
+
+
+var cursor = chart.set("cursor", am5xy.XYCursor.new(root, {
+  xAxis: xAxis
+}));
+cursor.lineY.set("visible", false);
+
+
+// Update data every second
+setInterval(function () {
+  addData();
+}, 1000)
+
+
+function addData() {
+
+ref.on("value", function(snapshot) {
+
+console.log(snapshot.val());
+var lastDataItem = series.dataItems[series.dataItems.length - 1];
+var lastValue = lastDataItem.get("valueY");
+var newValue = value + (snapshot.val());
+var lastDate = new Date(lastDataItem.get("valueX"));
+var time = am5.time.add(new Date(lastDate), "second", 1).getTime();
+series.data.removeIndex(0);
+series.data.push({
+  date: time,
+  value: newValue
+});
+
+var newDataItem = series.dataItems[series.dataItems.length - 1];
+newDataItem.animate({
+  key: "valueYWorking",
+  to: newValue,
+  from: lastValue,
+  duration: 600,
+  easing: easing
+});
+
+// use the bullet of last data item so that a new sprite is not created
+newDataItem.bullets = [];
+newDataItem.bullets[0] = lastDataItem.bullets[0];
+newDataItem.bullets[0].get("sprite").dataItem = newDataItem;
+// reset bullets
+lastDataItem.dataContext.bullet = false;
+lastDataItem.bullets = [];
+
+
+var animation = newDataItem.animate({
+  key: "locationX",
+  to: 0.5,
+  from: -0.5,
+  duration: 600
+});
+if (animation) {
+  var tooltip = xAxis.get("tooltip");
+  if (tooltip && !tooltip.isHidden()) {
+    animation.events.on("stopped", function () {
+      xAxis.updateTooltip();
+    })
+  }
+}
+    });
+
+
+}
+
+
+// Make stuff animate on load
+// https://www.amcharts.com/docs/v5/concepts/animations/
+chart.appear(1000, 100);
+
+}); // end am5.ready()
+
+
+
+
+am5.ready(function() {
+
+// Create root element
+// https://www.amcharts.com/docs/v5/getting-started/#Root_element
+var root = am5.Root.new("gauge");
+
+// Set themes
+// https://www.amcharts.com/docs/v5/concepts/themes/
+root.setThemes([
+  am5themes_Animated.new(root)
+]);
+
+// Create chart
+// https://www.amcharts.com/docs/v5/charts/radar-chart/
+var chart = root.container.children.push(
+  am5radar.RadarChart.new(root, {
+    panX: false,
+    panY: false,
+    startAngle: 180,
+    endAngle: 360
+  })
+);
+
+chart.getNumberFormatter().set("numberFormat", "#'%'");
+
+// Create axis and its renderer
+// https://www.amcharts.com/docs/v5/charts/radar-chart/gauge-charts/#Axes
+var axisRenderer = am5radar.AxisRendererCircular.new(root, {
+  innerRadius: -40
+});
+
+axisRenderer.grid.template.setAll({
+  stroke: root.interfaceColors.get("background"),
+  visible: true,
+  strokeOpacity: 0.8
+});
+
+var xAxis = chart.xAxes.push(
+  am5xy.ValueAxis.new(root, {
+    maxDeviation: 0,
+    min: 0,
+    max: 100,
+    strictMinMax: true,
+    renderer: axisRenderer
+  })
+);
+
+// Add clock hand
+// https://www.amcharts.com/docs/v5/charts/radar-chart/gauge-charts/#Clock_hands
+var axisDataItem = xAxis.makeDataItem({});
+
+var clockHand = am5radar.ClockHand.new(root, {
+  pinRadius: 50,
+  radius: am5.percent(100),
+  innerRadius: 50,
+  bottomWidth: 0,
+  topWidth: 0
+});
+
+clockHand.pin.setAll({
+  fillOpacity: 0,
+  strokeOpacity: 0.5,
+  stroke: am5.color(0x000000),
+  strokeWidth: 1,
+  strokeDasharray: [2, 2]
+});
+clockHand.hand.setAll({
+  fillOpacity: 0,
+  strokeOpacity: 0.5,
+  stroke: am5.color(0x000000),
+  strokeWidth: 0.5
+});
+
+var bullet = axisDataItem.set(
+  "bullet",
+  am5xy.AxisBullet.new(root, {
+    sprite: clockHand
+  })
+);
+
+xAxis.createAxisRange(axisDataItem);
+
+var label = chart.radarContainer.children.push(
+  am5.Label.new(root, {
+    centerX: am5.percent(50),
+    textAlign: "center",
+    centerY: am5.percent(50),
+    fontSize: "1.5em"
+  })
+);
+
+axisDataItem.set("value", 50);
+bullet.get("sprite").on("rotation", function () {
+  var value = axisDataItem.get("value");
+  label.set("text", Math.round(value).toString() + "%");
+});
+
+setInterval(function () {
+    ref.on("value", function(snapshot) {
+        
+        
+        var value = Math.round(snapshot.val() );
+
+        axisDataItem.animate({
+        key: "value",
+        to: value,
+        duration: 500,
+        easing: am5.ease.out(am5.ease.cubic)
+        });
+
+        axisRange0.animate({
+        key: "endValue",
+        to: value,
+        duration: 500,
+        easing: am5.ease.out(am5.ease.cubic)
+        });
+
+        axisRange1.animate({
+        key: "value",
+        to: value,
+        duration: 500,
+        easing: am5.ease.out(am5.ease.cubic)
+        });
+            
+            
+            });
+
+
+        }, 2000);
+
+chart.bulletsContainer.set("mask", undefined);
+
+var colorSet = am5.ColorSet.new(root, {});
+
+var axisRange0 = xAxis.createAxisRange(
+  xAxis.makeDataItem({
+    above: true,
+    value: 0,
+    endValue: 50
+  })
+);
+
+axisRange0.get("axisFill").setAll({
+  visible: true,
+  fill: colorSet.getIndex(0)
+});
+
+axisRange0.get("label").setAll({
+  forceHidden: true
+});
+
+var axisRange1 = xAxis.createAxisRange(
+  xAxis.makeDataItem({
+    above: true,
+    value: 50,
+    endValue: 100
+  })
+);
+
+axisRange1.get("axisFill").setAll({
+  visible: true,
+  fill: colorSet.getIndex(4)
+});
+
+axisRange1.get("label").setAll({
+  forceHidden: true
+});
+
+// Make stuff animate on load
+chart.appear(1000, 100);
+
+}); // end am5.ready()
+
+
+am5.ready(function() {
+
+// Create root element
+// https://www.amcharts.com/docs/v5/getting-started/#Root_element
+var root = am5.Root.new("jam");
+
+
+// Set themes
+// https://www.amcharts.com/docs/v5/concepts/themes/
+root.setThemes([
+  am5themes_Animated.new(root)
+]);
+
+
+// Create chart
+// https://www.amcharts.com/docs/v5/charts/radar-chart/
+var chart = root.container.children.push(am5radar.RadarChart.new(root, {
+  panX: false,
+  panY: false
+}));
+
+
+// Create axis and its renderer
+// https://www.amcharts.com/docs/v5/charts/radar-chart/gauge-charts/#Axes
+var axisRenderer = am5radar.AxisRendererCircular.new(root, {
+  innerRadius: -10,
+  strokeOpacity: 1,
+  strokeWidth: 8,
+  minGridDistance: 10
+});
+
+var xAxis = chart.xAxes.push(am5xy.ValueAxis.new(root, {
+  maxDeviation: 0,
+  min: 0,
+  max: 12,
+  strictMinMax: true,
+  renderer: axisRenderer,
+  maxPrecision: 0
+}));
+
+// second axis
+// https://www.amcharts.com/docs/v5/charts/radar-chart/gauge-charts/#Axes
+var secondAxisRenderer = am5radar.AxisRendererCircular.new(root, {
+  innerRadius: -10,
+  radius: am5.percent(40),
+  strokeOpacity: 0,
+  minGridDistance: 1
+});
+
+var secondXAxis = chart.xAxes.push(am5xy.ValueAxis.new(root, {
+  maxDeviation: 0,
+  min: 0,
+  max: 60,
+  strictMinMax: true,
+  renderer: secondAxisRenderer,
+  maxPrecision: 0
+}));
+
+
+// hides 0 value
+axisRenderer.labels.template.setAll({
+  minPosition: 0.02,
+  textType: "adjusted",
+  inside: true,
+  radius: 25
+});
+axisRenderer.grid.template.set("strokeOpacity", 1);
+
+
+secondAxisRenderer.labels.template.setAll({
+  forceHidden: true
+});
+secondAxisRenderer.grid.template.setAll({
+  forceHidden: true
+});
+secondAxisRenderer.ticks.template.setAll({
+  strokeOpacity: 1,
+  minPosition: 0.01,
+  visible: true,
+  inside: true,
+  length: 10
+});
+
+// Add clock hands
+// https://www.amcharts.com/docs/v5/charts/radar-chart/gauge-charts/#Clock_hands
+
+// hour
+var hourDataItem = xAxis.makeDataItem({});
+
+var hourHand = am5radar.ClockHand.new(root, {
+  radius: am5.percent(70),
+  topWidth: 14,
+  bottomWidth: 14,
+  innerRadius: am5.percent(43),
+  pinRadius: 0,
+  layer: 5
+})
+
+hourDataItem.set("bullet", am5xy.AxisBullet.new(root, {
+  sprite: hourHand
+}));
+
+xAxis.createAxisRange(hourDataItem);
+
+hourDataItem.get("grid").set("visible", false);
+
+// minutes
+var minutesDataItem = xAxis.makeDataItem({});
+
+var minutesHand = am5radar.ClockHand.new(root, {
+  radius: am5.percent(85),
+  topWidth: 10,
+  bottomWidth: 10,
+  innerRadius: am5.percent(43),
+  pinRadius: 0,
+  layer: 5
+})
+
+minutesDataItem.set("bullet", am5xy.AxisBullet.new(root, {
+  sprite: minutesHand
+}));
+
+xAxis.createAxisRange(minutesDataItem);
+
+minutesDataItem.get("grid").set("visible", false);
+
+// seconds
+var secondsDataItem = xAxis.makeDataItem({});
+
+var secondsHand = am5radar.ClockHand.new(root, {
+  radius: am5.percent(40),
+  innerRadius: -10,
+  topWidth: 5,
+  bottomWidth: 5,
+  pinRadius: 0,
+  layer: 5
+})
+
+secondsHand.hand.set("fill", am5.color(0xff0000));
+secondsHand.pin.set("fill", am5.color(0xff0000));
+
+secondsDataItem.set("bullet", am5xy.AxisBullet.new(root, {
+  sprite: secondsHand
+}));
+
+xAxis.createAxisRange(secondsDataItem);
+
+secondsDataItem.get("grid").set("visible", false);
+
+// week label
+var label = chart.radarContainer.children.push(am5.Label.new(root, {
+  fontSize: "2em",
+  centerX: am5.p50,
+  centerY: am5.p50
+}));
+
+
+setInterval(function() {
+  updateHands(300)
+}, 1000);
+
+function updateHands(duration) {
+  // get current date
+  var date = new Date();
+  var hours = date.getHours();
+  
+  if(hours > 12){
+    hours -= 12;
+  }  
+  
+  var minutes = date.getMinutes();
+  var seconds = date.getSeconds();
+
+  // set hours
+  hourDataItem.set("value", hours + minutes / 60 + seconds / 60 / 60);
+  // set minutes
+  minutesDataItem.set("value", 12 * (minutes + seconds / 60) / 60);
+  // set seconds
+  var current = secondsDataItem.get("value");
+  var value = 12 * date.getSeconds() / 60;
+  // otherwise animation will go from 59 to 0 and the hand will move backwards
+  if (value == 0) {
+    value = 11.999;
+  }
+  // if it's more than 11.99, set it to 0
+  if (current > 11.99) {
+    current = 0;
+  }
+  secondsDataItem.animate({
+    key: "value",
+    from: current,
+    to: value,
+    duration: duration
+  });
+
+  label.set("text", chart.getDateFormatter().format(date, "MMM dd"))
+}
+
+updateHands(0);
+
+// Make stuff animate on load
+chart.appear(1000, 100);
+
+// update on visibility
+document.addEventListener("visibilitychange", function() {
+  updateHands(0)
+});
+
+}); // end am5.ready()
+
+</script>
+</body>
+</html>
+

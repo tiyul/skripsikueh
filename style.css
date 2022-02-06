@@ -1,0 +1,61 @@
+{
+  background-image: url("anthony-didonna-tesselation.gif");
+}
+* {
+  box-sizing: border-box;
+}
+
+.menu {
+  float: left;
+  width: 20%;
+  text-align: center;
+}
+
+.menu a {
+  background-color: #e5e5e5;
+  padding: 8px;
+  margin-top: 7px;
+  display: block;
+  width: 100%;
+  color: black;
+}
+
+.main {
+  float: left;
+  width: 50%;
+  padding: 0 20px;
+}
+
+.right {
+
+  float: left;
+  width: 30%;
+  padding: 15px;
+  margin-top: 7px;
+  text-align: center;
+}
+
+@media only screen and (max-width: 620px) {
+  /* For mobile phones: */
+  .menu, .main, .right {
+    width: 100%;
+  }
+}
+#gauge {
+  width: 100%;
+  height: 400px;
+}
+#chart{
+width: 100%;
+height: 200px;
+max-width:100%;
+}
+#pred{
+  width: 100%;
+  height: 200px;
+  max-width:100%;
+  }
+#jam {
+  width: 100%;
+  height: 400px;
+}
