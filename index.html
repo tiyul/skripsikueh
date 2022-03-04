@@ -184,13 +184,14 @@ function addData() {
   prediksi.on("value", function(snapshot) {
   var lastDataItem = series.dataItems[series.dataItems.length - 1];
   var lastValue = lastDataItem.get("valueY");
-  var newValue =(snapshot.val());
+  var newValue = parseInt(snapshot.val());
+    
   document.getElementById("status").innerHTML =newValue;
-  if(newValue>'0'){
+  if(newValue<='5'){
     document.getElementById("p_st").innerHTML ="aman";
-  }else if(newValue>'5'){
+  }else if(newValue <='10'){
     document.getElementById("p_st").innerHTML ="Siaga";
-  }else{
+  }else if(newValue >'10'){
     document.getElementById("p_st").innerHTML ="Banjir";
   }
   var lastDate = new Date(lastDataItem.get("valueX"));
