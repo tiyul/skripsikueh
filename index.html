@@ -187,11 +187,11 @@ function addData() {
   var newValue = parseInt(snapshot.val());
     
   document.getElementById("status").innerHTML =newValue;
-  if(newValue<='5'){
+  if(newValue<='9'){
     document.getElementById("p_st").innerHTML ="aman";
-  }else if(newValue <='10'){
+  }else if(newValue <='12'){
     document.getElementById("p_st").innerHTML ="Siaga";
-  }else if(newValue >'10'){
+  }else if(newValue >'15'){
     document.getElementById("p_st").innerHTML ="Banjir";
   }
   var lastDate = new Date(lastDataItem.get("valueX"));
