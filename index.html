@@ -23,13 +23,13 @@
     <div id="pred"></div>
     
   </div>
-  <h1>angka status</p>
-<p id='status'></p>
-  <h1>prediksi stastu</p>
-  <p id="p_st">pred status</p>
+ 
   <div class="right">
     <div id="jam"></div>
-    
+  <p>angka status<p><span id='status'></span>
+  <br>
+  <br>
+  <p>prediksi status</p><span id="p_st">pred status</span>
   </div>
 </div>
 
@@ -533,7 +533,7 @@ var label = chart.radarContainer.children.push(
 axisDataItem.set("value", 50);
 bullet.get("sprite").on("rotation", function () {
   var value = axisDataItem.get("value");
-  label.set("text", Math.round(value).toString() + "%");
+  label.set("text", Math.round(value).toString() + "cm");
 });
 
 setInterval(function () {
