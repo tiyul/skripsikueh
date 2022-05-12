@@ -6,30 +6,26 @@
 
 </head>
 <body style="font-family:Verdana;color:#aaaaaa;">
-
-<div style="background-color:#57adf3;padding:15px;text-align:center;">
-  <h1>Skripsi</h1>
+<div style="background-color:#57adf36c;padding:1px;text-align:center;">
+  <h5>Skripsi</h5>
 </div>
 
 <div style="overflow:auto">
   <div class="menu">
-  
   <div id="gauge"></div>
-  <p>data : </p>
   </div>
 
   <div class="main">
     <div id="chart"></div>
     <div id="pred"></div>
-    
+    <h4  style="color: black;">angka status</h4><span id='status' style="color: black;"></span>
+      <hr>
+      <h4  style="color: black;">prediksi status</h4>
+      <span id="p_st"  style="color: black;">pred status</span>
   </div>
  
   <div class="right">
-    <div id="jam"></div>
-  <p>angka status<p><span id='status'></span>
-  <br>
-  <br>
-  <p>prediksi status</p><span id="p_st">pred status</span>
+  <div id="jam"></div>
   </div>
 </div>
 
@@ -62,7 +58,7 @@ var ref = db.ref("/test/float");
 var prediksi = db.ref("/test/prediksi");
 
 
-
+//reff
 am5.ready(function() {
 
 // Create root element
@@ -83,13 +79,12 @@ var value = 0;
 function generateChartData() {
   var chartData = [];
   var firstDate = new Date();
-  firstDate.setDate(firstDate.getDate() - 1000);
+  firstDate.setDate(firstDate.getDate() - 200);
   firstDate.setHours(0, 0, 0, 0);
 
-  for (var i = 0; i < 100; i++) {
-
+  for (var i = 0; i < 150; i++) {
     var newDate = new Date(firstDate);
-    newDate.setDate(newDate.getDate() + i);
+    newDate.setSeconds(newDate.getSeconds() + i);
     value += 0;
 
     chartData.push({
@@ -120,15 +115,15 @@ var easing = am5.ease.linear;
 // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
 var xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, {
   maxDeviation: 0.5,
-  extraMin:-0.1,
-  extraMax:0.1,
   groupData: false,
+  extraMax:0.3, // this adds some space in front
+  extraMin:-0.1,  // this removes some space form th beginning so that the line would not be cut off
   baseInterval: {
-    timeUnit: "day",
+    timeUnit: "second",
     count: 1
   },
   renderer: am5xy.AxisRendererX.new(root, {
-    minGridDistance: 50
+    minGridDistance: 500
   }),
   tooltip: am5.Tooltip.new(root, {})
 }));
@@ -138,10 +133,7 @@ var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
 }));
 
 
-// Add series
-// https://www.amcharts.com/docs/v5/charts/xy-chart/series/
 var series = chart.series.push(am5xy.LineSeries.new(root, {
-  minBulletDistance: 10,
   name: "Series 1",
   xAxis: xAxis,
   yAxis: yAxis,
@@ -152,21 +144,47 @@ var series = chart.series.push(am5xy.LineSeries.new(root, {
     labelText: "{valueY}"
   })
 }));
+
+// tell that the last data item must create bullet
+data[data.length - 1].bullet = true;
 series.data.setAll(data);
+series.bullets.push(function(root, series, dataItem) {  
+ 
+  if (dataItem.dataContext.bullet) {    
+    var container = am5.Container.new(root, {});
+    var circle0 = container.children.push(am5.Circle.new(root, {
+      radius: 5,
+      fill: am5.color(0xff0000)
+    }));
+    var circle1 = container.children.push(am5.Circle.new(root, {
+      radius: 5,
+      fill: am5.color(0xff0000)
+    }));
 
-series.bullets.push(function () {
-  return am5.Bullet.new(root, {
-    locationX:undefined,
-    sprite: am5.Circle.new(root, {
-      radius: 4,
-      fill: series.get("fill")
+    circle1.animate({
+      key: "radius",
+      to: 20,
+      duration: 1000,
+      easing: am5.ease.out(am5.ease.cubic),
+      loops: Infinity
+    });
+    circle1.animate({
+      key: "opacity",
+      to: 0,
+      from: 1,
+      duration: 1000,
+      easing: am5.ease.out(am5.ease.cubic),
+      loops: Infinity
+    });
+
+    return am5.Bullet.new(root, {
+      locationX:undefined,
+      sprite: container
     })
-  })
-});
+  }
+})
 
 
-// Add cursor
-// https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
 var cursor = chart.set("cursor", am5xy.XYCursor.new(root, {
   xAxis: xAxis
 }));
@@ -181,12 +199,13 @@ setInterval(function () {
 
 function addData() {
 
-  prediksi.on("value", function(snapshot) {
-  var lastDataItem = series.dataItems[series.dataItems.length - 1];
-  var lastValue = lastDataItem.get("valueY");
-  var newValue = parseInt(snapshot.val());
-    
-  document.getElementById("status").innerHTML =newValue;
+prediksi.on("value", function(snapshot) {
+
+console.log(snapshot.val());
+var lastDataItem = series.dataItems[series.dataItems.length - 1];
+var lastValue = lastDataItem.get("valueY");
+var newValue = value + (snapshot.val());
+document.getElementById("status").innerHTML =newValue;
   if(newValue<='9'){
     document.getElementById("p_st").innerHTML ="aman";
   }else if(newValue <='12'){
@@ -194,42 +213,49 @@ function addData() {
   }else if(newValue >'15'){
     document.getElementById("p_st").innerHTML ="Banjir";
   }
-  var lastDate = new Date(lastDataItem.get("valueX"));
-  var time = am5.time.add(new Date(lastDate), "day", 1).getTime();
-  series.data.removeIndex(0);
-  series.data.push({
-    date: time,
-    value: newValue
-  })
+var lastDate = new Date(lastDataItem.get("valueX"));
+var time = am5.time.add(new Date(lastDate), "second", 1).getTime();
+series.data.removeIndex(0);
+series.data.push({
+  date: time,
+  value: newValue
+});
 
-  var newDataItem = series.dataItems[series.dataItems.length - 1];
-  newDataItem.animate({
-    key: "valueYWorking",
-    to: newValue,
-    from: lastValue,
-    duration: 600,
-    easing: easing
-  });
+var newDataItem = series.dataItems[series.dataItems.length - 1];
+newDataItem.animate({
+  key: "valueYWorking",
+  to: newValue,
+  from: lastValue,
+  duration: 600,
+  easing: easing
+});
 
-  var animation = newDataItem.animate({
-    key: "locationX",
-    to: 0.5,
-    from: -0.5,
-    duration: 600
-  });
-  if (animation) {
-    var tooltip = xAxis.get("tooltip");
-    if (tooltip && !tooltip.isHidden()) {
-      animation.events.on("stopped", function () {
-        xAxis.updateTooltip();
-      })
-    }
+// use the bullet of last data item so that a new sprite is not created
+newDataItem.bullets = [];
+newDataItem.bullets[0] = lastDataItem.bullets[0];
+newDataItem.bullets[0].get("sprite").dataItem = newDataItem;
+// reset bullets
+lastDataItem.dataContext.bullet = false;
+lastDataItem.bullets = [];
+
+
+var animation = newDataItem.animate({
+  key: "locationX",
+  to: 0.5,
+  from: -0.5,
+  duration: 600
+});
+if (animation) {
+  var tooltip = xAxis.get("tooltip");
+  if (tooltip && !tooltip.isHidden()) {
+    animation.events.on("stopped", function () {
+      xAxis.updateTooltip();
+    })
   }
+}
+    });
 
 
-  });
-
- 
 }
 
 
@@ -238,9 +264,14 @@ function addData() {
 chart.appear(1000, 100);
 
 }); // end am5.ready()
-  
-//cob  
-  am5.ready(function() {
+
+
+
+
+
+//reff
+
+am5.ready(function() {
 
 // Create root element
 // https://www.amcharts.com/docs/v5/getting-started/#Root_element
@@ -260,13 +291,12 @@ var value = 0;
 function generateChartData() {
   var chartData = [];
   var firstDate = new Date();
-  firstDate.setDate(firstDate.getDate() - 1000);
+  firstDate.setDate(firstDate.getDate() - 200);
   firstDate.setHours(0, 0, 0, 0);
 
-  for (var i = 0; i < 100; i++) {
-
+  for (var i = 0; i < 150; i++) {
     var newDate = new Date(firstDate);
-    newDate.setDate(newDate.getDate() + i);
+    newDate.setSeconds(newDate.getSeconds() + i);
     value += 0;
 
     chartData.push({
@@ -297,15 +327,15 @@ var easing = am5.ease.linear;
 // https://www.amcharts.com/docs/v5/charts/xy-chart/axes/
 var xAxis = chart.xAxes.push(am5xy.DateAxis.new(root, {
   maxDeviation: 0.5,
-  extraMin:-0.1,
-  extraMax:0.1,
   groupData: false,
+  extraMax:0.3, // this adds some space in front
+  extraMin:-0.1,  // this removes some space form th beginning so that the line would not be cut off
   baseInterval: {
-    timeUnit: "day",
+    timeUnit: "second",
     count: 1
   },
   renderer: am5xy.AxisRendererX.new(root, {
-    minGridDistance: 50
+    minGridDistance: 500
   }),
   tooltip: am5.Tooltip.new(root, {})
 }));
@@ -315,10 +345,7 @@ var yAxis = chart.yAxes.push(am5xy.ValueAxis.new(root, {
 }));
 
 
-// Add series
-// https://www.amcharts.com/docs/v5/charts/xy-chart/series/
 var series = chart.series.push(am5xy.LineSeries.new(root, {
-  minBulletDistance: 10,
   name: "Series 1",
   xAxis: xAxis,
   yAxis: yAxis,
@@ -329,21 +356,47 @@ var series = chart.series.push(am5xy.LineSeries.new(root, {
     labelText: "{valueY}"
   })
 }));
+
+// tell that the last data item must create bullet
+data[data.length - 1].bullet = true;
 series.data.setAll(data);
+series.bullets.push(function(root, series, dataItem) {  
+ 
+  if (dataItem.dataContext.bullet) {    
+    var container = am5.Container.new(root, {});
+    var circle0 = container.children.push(am5.Circle.new(root, {
+      radius: 5,
+      fill: am5.color(0xff0000)
+    }));
+    var circle1 = container.children.push(am5.Circle.new(root, {
+      radius: 5,
+      fill: am5.color(0xff0000)
+    }));
 
-series.bullets.push(function () {
-  return am5.Bullet.new(root, {
-    locationX:undefined,
-    sprite: am5.Circle.new(root, {
-      radius: 4,
-      fill: series.get("fill")
+    circle1.animate({
+      key: "radius",
+      to: 20,
+      duration: 1000,
+      easing: am5.ease.out(am5.ease.cubic),
+      loops: Infinity
+    });
+    circle1.animate({
+      key: "opacity",
+      to: 0,
+      from: 1,
+      duration: 1000,
+      easing: am5.ease.out(am5.ease.cubic),
+      loops: Infinity
+    });
+
+    return am5.Bullet.new(root, {
+      locationX:undefined,
+      sprite: container
     })
-  })
-});
+  }
+})
 
 
-// Add cursor
-// https://www.amcharts.com/docs/v5/charts/xy-chart/cursor/
 var cursor = chart.set("cursor", am5xy.XYCursor.new(root, {
   xAxis: xAxis
 }));
@@ -354,66 +407,6 @@ cursor.lineY.set("visible", false);
 setInterval(function () {
   addData();
 }, 1000)
-
-
-function addData() {
-
-  ref.on("value", function(snapshot) {
-  var lastDataItem = series.dataItems[series.dataItems.length - 1];
-  var lastValue = lastDataItem.get("valueY");
-  var newValue = parseInt(snapshot.val());
-    
- 
-  var lastDate = new Date(lastDataItem.get("valueX"));
-  var time = am5.time.add(new Date(lastDate), "day", 1).getTime();
-  series.data.removeIndex(0);
-  series.data.push({
-    date: time,
-    value: newValue
-  })
-
-  var newDataItem = series.dataItems[series.dataItems.length - 1];
-  newDataItem.animate({
-    key: "valueYWorking",
-    to: newValue,
-    from: lastValue,
-    duration: 600,
-    easing: easing
-  });
-
-  var animation = newDataItem.animate({
-    key: "locationX",
-    to: 0.5,
-    from: -0.5,
-    duration: 600
-  });
-  if (animation) {
-    var tooltip = xAxis.get("tooltip");
-    if (tooltip && !tooltip.isHidden()) {
-      animation.events.on("stopped", function () {
-        xAxis.updateTooltip();
-      })
-    }
-  }
-
-
-  });
-
- 
-}
-
-
-// Make stuff animate on load
-// https://www.amcharts.com/docs/v5/concepts/animations/
-chart.appear(1000, 100);
-
-}); // end am5.ready()
-
- //end
-  
-  
-  
-
 
 
 function addData() {
