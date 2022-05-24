@@ -206,11 +206,11 @@ var lastDataItem = series.dataItems[series.dataItems.length - 1];
 var lastValue = lastDataItem.get("valueY");
 var newValue = value + (snapshot.val());
 document.getElementById("status").innerHTML =newValue;
-  if(newValue>0){
+  if(number(newValue)>0){
     document.getElementById("p_st").innerHTML ="aman";
-  }else if(newValue >11){
+  }else if(number(newValue) >11){
     document.getElementById("p_st").innerHTML ="Siaga";
-  }else if(newValue >31){
+  }else if(number(newValue) >31){
     document.getElementById("p_st").innerHTML ="Banjir";
   }
 var lastDate = new Date(lastDataItem.get("valueX"));
