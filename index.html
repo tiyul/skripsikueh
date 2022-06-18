@@ -72,12 +72,12 @@ prediksi.on("value", function(snapshot) {
   x = snapshot.val();
   console.log(x);
 
-if (  isNaN(x) || x > 10){
+if (  isNaN(x) || x < 11){
   text ="aman";
-}else if (  isNaN(x) || x > 11 ){
+}else if (  isNaN(x) || x < 20 ){
   text ="Siaga";
   }
-  else if (  isNaN(x) || x > 31 ){
+  else if (  isNaN(x) || x < 31 ){
   text ="banjir";
   }
    
