@@ -238,20 +238,20 @@ var lastDataItem = series.dataItems[series.dataItems.length - 1];
 var lastValue = lastDataItem.get("valueY");
 var kar = snapshot.val();
   if (  isNaN(x) || x < 11){
-  text ="aman";
+
     kar ='30';
   }
   else if (  isNaN(x) || x < 12){
   
-  text ="Siaga";
+
     kar='30';
   }
   else if (  isNaN(x) || x < 18 ){
-  text ="banjir";
+  
      kar ='50';
   }
    
-  #document.getElementById("demo").innerHTML = text;
+ 
 var newValue = value + (kar);
 
 var lastDate = new Date(lastDataItem.get("valueX"));
