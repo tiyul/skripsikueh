@@ -236,23 +236,24 @@ prediksi.on("value", function(snapshot) {
 //console.log(snapshot.val());
 var lastDataItem = series.dataItems[series.dataItems.length - 1];
 var lastValue = lastDataItem.get("valueY");
-var kar = snapshot.val();
-  if (  isNaN(x) || x < 11){
+var x1 = snapshot.val();
+ 
+  if (  isNaN(x1) || x < 11){
 
-    kar ='30';
+    y1 ='30';
   }
-  else if (  isNaN(x) || x < 12){
+  else if (  isNaN(x1) || x < 12){
   
 
-    kar='30';
+    y1='30';
   }
-  else if (  isNaN(x) || x < 18 ){
+  else if (  isNaN(x1) || x < 18 ){
   
-     kar ='50';
+    y1='50';
   }
    
  
-var newValue = value + (kar);
+var newValue = value + (y1);
 
 var lastDate = new Date(lastDataItem.get("valueX"));
 var time = am5.time.add(new Date(lastDate), "second", 1).getTime();
